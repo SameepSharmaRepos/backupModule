@@ -59,7 +59,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, OnFileDownaloade
         setUpViews()
         if (!isSignedInToGoogle)
             requestSignIn()
-        myDb = MyDb.getDatabase(this, CoroutineScope(Dispatchers.IO))
+//        myDb = MyDb.getDatabase(this, CoroutineScope(Dispatchers.IO))
         //getDataFromDb()
         btnSave.setOnClickListener(this)
 
@@ -104,7 +104,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, OnFileDownaloade
 
         lifecycleScope.launch(Dispatchers.IO) {
             myDb = MyDb.getDatabase(this@MainActivity, CoroutineScope(Dispatchers.IO))
-            //nameFromDb = myDb.userDao().getUser()?.name
+            nameFromDb = myDb.userDao().getUser()?.name
             Log.e("NmaeFromDb>>", "$nameFromDb <<<")
             withContext(Dispatchers.Main) {
                 if (nameFromDb != null)
@@ -129,11 +129,12 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, OnFileDownaloade
                     lifecycleScope.launch(Dispatchers.IO) {
                         myDb.userDao()
                             .insertUser(User(0, etName.text.toString(), etPass.text.toString()))
+                        Log.e("NameInDB>>", "${myDb.userDao().getUser().name} <<")
                         withContext(Dispatchers.Main)
                         {
                             Toast.makeText(this@MainActivity, "Data Saved!!", Toast.LENGTH_LONG)
                                 .show()
-                            onLocalBackupRequested()
+                            //onLocalBackupRequested()
                         }
                         Log.e("SelectedItem>>", "${spinner_backup_frequency.selectedItem} <<<")
 

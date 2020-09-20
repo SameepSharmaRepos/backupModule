@@ -82,39 +82,52 @@ class DriveServiceHelper(
                     val outputStream = ByteArrayOutputStream()
 
                     val listReq = driveService.files().list()
-                    listReq.setQ("mimeType='image/jpeg'")
+//                    listReq.setQ("mimeType='image/jpeg'")
+                    listReq.setQ("name='user_db'")
 
                     val qList = listReq.execute()
-                    if (qList.size > 0)
+                    if (qList.size > 0) {
+
                         Log.e(
                             "QList>>",
-                            "${qList.size}, ${qList[0].toString()} <<<"
+                            "${qList.size}, ${qList[0].toString()}, ${qList.files.size} <<<"
                         )
 
-                    driveService.files().get(prevId).executeAndDownloadTo(outputStream)
+                        val idFileFromDrive = qList.files[0].id
+                        driveService.files().get(idFileFromDrive).executeAndDownloadTo(outputStream)
 
-                    val fileOut = FileOutputStream(context.getDatabasePath(MyDb.dbName))
-                    outputStream.writeTo(fileOut)
 
-                    val fileInDbFolder = java.io.File(context.getDatabasePath(MyDb.dbName).toURI())
-                    if (fileInDbFolder.exists())
-                        fileInDbFolder.delete()
-                    fileInDbFolder.createNewFile()
+                        val fileOut = FileOutputStream(context.getDatabasePath(MyDb.dbName))
+                        outputStream.writeTo(fileOut)
 
-                    val fOut = FileOutputStream(fileInDbFolder)
-                    outputStream.writeTo(fOut)
+                        val fileInDbFolder =
+                            java.io.File(context.getDatabasePath(MyDb.dbName).toURI())
+                        if (fileInDbFolder.exists())
+                            fileInDbFolder.delete()
+                        fileInDbFolder.createNewFile()
+                        Log.e("NewFileExisis>>", "${fileInDbFolder.exists()} <<")
 
-                    outputStream.flush()
-                    outputStream.close()
+                        val fOut = FileOutputStream(fileInDbFolder)
+                        outputStream.writeTo(fOut)
 
-                    fileOut.flush()
-                    fileOut.close()
+                        outputStream.flush()
+                        outputStream.close()
 
-                    fOut.flush()
-                    fOut.close()
+                        fileOut.flush()
+                        fileOut.close()
 
-                    if (listerner != null)
-                        listerner.onFileDownloaded()
+                        fOut.flush()
+                        fOut.close()
+
+                        if (listerner != null)
+                            listerner.onFileDownloaded()
+
+
+                    }
+
+
+                    //driveService.files().get(prevId).executeAndDownloadTo(outputStream)
+
 
                 } catch (e: Exception) {
                     Log.e("DriveExceptionTwo>>", "${e.message} <<<")
