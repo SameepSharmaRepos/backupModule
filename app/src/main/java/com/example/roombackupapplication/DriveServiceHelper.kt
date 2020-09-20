@@ -13,7 +13,15 @@ import java.io.IOException
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 
-class DriveServiceHelper(private val context: Context, private val driveService: Drive) {
+interface OnFileDownaloadedListener {
+    fun onFileDownloaded()
+}
+
+class DriveServiceHelper(
+    private val context: Context,
+    private val driveService: Drive,
+    private val listerner: OnFileDownaloadedListener?
+) {
 
     companion object {
         const val PREF_NAME = "myPref"
@@ -63,7 +71,7 @@ class DriveServiceHelper(private val context: Context, private val driveService:
 
     }
 
-    fun getBakedUpData() {
+    fun getBackedUpData() {
         Tasks.call(executor, object : Callable<Unit> {
             override fun call() {
 
@@ -72,9 +80,20 @@ class DriveServiceHelper(private val context: Context, private val driveService:
 
                     val prevId = pref.getString(PREF_DRIVE_FILE_ID, null)
                     val outputStream = ByteArrayOutputStream()
+
+                    val listReq = driveService.files().list()
+                    listReq.setQ("mimeType='image/jpeg'")
+
+                    val qList = listReq.execute()
+                    if (qList.size > 0)
+                        Log.e(
+                            "QList>>",
+                            "${qList.size}, ${qList[0].toString()} <<<"
+                        )
+
                     driveService.files().get(prevId).executeAndDownloadTo(outputStream)
 
-                    val fileOut = FileOutputStream(MyDb.dbName)
+                    val fileOut = FileOutputStream(context.getDatabasePath(MyDb.dbName))
                     outputStream.writeTo(fileOut)
 
                     val fileInDbFolder = java.io.File(context.getDatabasePath(MyDb.dbName).toURI())
@@ -94,8 +113,11 @@ class DriveServiceHelper(private val context: Context, private val driveService:
                     fOut.flush()
                     fOut.close()
 
+                    if (listerner != null)
+                        listerner.onFileDownloaded()
+
                 } catch (e: Exception) {
-                    Log.e("DriveException>>", "${e.message} <<<")
+                    Log.e("DriveExceptionTwo>>", "${e.message} <<<")
                 }
             }
 

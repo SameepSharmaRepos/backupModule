@@ -29,7 +29,7 @@ import kotlinx.coroutines.withContext
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-class MainActivity : AppCompatActivity(), View.OnClickListener {
+class MainActivity : AppCompatActivity(), View.OnClickListener, OnFileDownaloadedListener {
 
     companion object {
         const val WORKER_TAG = "BackupWorker"
@@ -103,6 +103,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     private fun getDataFromDb() {
 
         lifecycleScope.launch(Dispatchers.IO) {
+            myDb = MyDb.getDatabase(this@MainActivity, CoroutineScope(Dispatchers.IO))
             //nameFromDb = myDb.userDao().getUser()?.name
             Log.e("NmaeFromDb>>", "$nameFromDb <<<")
             withContext(Dispatchers.Main) {
@@ -120,61 +121,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         when (p0!!.id) {
             R.id.btnSave -> {
 
-                Log.e("SelectedItem>>", "${spinner_backup_frequency.selectedItem} <<<")
-
-                val constraints =
-                    Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
-
-                val recurringTask = when (spinner_backup_frequency.selectedItem) {
-                    "Daily" -> {
-
-                        Log.e("Daily!5Min>>", "Yes<<")
-
-                        PeriodicWorkRequest.Builder(
-                            BackupWorker::class.java,
-                            15,
-                            TimeUnit.MINUTES
-                        )
-                            .addTag(WORKER_TAG)
-                            .setConstraints(constraints)
-                            .setBackoffCriteria(
-                                BackoffPolicy.LINEAR,
-                                PeriodicWorkRequest.MIN_BACKOFF_MILLIS,
-                                TimeUnit.MILLISECONDS
-                            )
-                            .build()
-
-                    }
-                    "Weekly" -> PeriodicWorkRequest.Builder(
-                        BackupWorker::class.java,
-                        7,
-                        TimeUnit.DAYS
-                    )
-                        .addTag(WORKER_TAG)
-                        .setConstraints(constraints)
-                        .setBackoffCriteria(
-                            BackoffPolicy.LINEAR,
-                            PeriodicWorkRequest.MIN_BACKOFF_MILLIS,
-                            TimeUnit.MILLISECONDS
-                        )
-                        .build()
-                    else -> PeriodicWorkRequest.Builder(BackupWorker::class.java, 30, TimeUnit.DAYS)
-                        .addTag(WORKER_TAG)
-                        .setConstraints(constraints)
-                        .setBackoffCriteria(
-                            BackoffPolicy.LINEAR,
-                            PeriodicWorkRequest.MIN_BACKOFF_MILLIS,
-                            TimeUnit.MILLISECONDS
-                        )
-                        .build()
-
-
-                }
-                workManager = WorkManager.getInstance(this)
-                workManager.enqueue(recurringTask)
-
-
-                /*val name = etName.text.toString()
+                val name = etName.text.toString()
                 val pass = etPass.text.toString()
 
                 if (name.isNotEmpty() && pass.isNotEmpty()) {
@@ -184,15 +131,74 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                             .insertUser(User(0, etName.text.toString(), etPass.text.toString()))
                         withContext(Dispatchers.Main)
                         {
-                            Toast.makeText(this@MainActivity, "Data Saved!!", Toast.LENGTH_LONG).show()
+                            Toast.makeText(this@MainActivity, "Data Saved!!", Toast.LENGTH_LONG)
+                                .show()
                             onLocalBackupRequested()
                         }
+                        Log.e("SelectedItem>>", "${spinner_backup_frequency.selectedItem} <<<")
+
+                        val constraints =
+                            Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED)
+                                .build()
+
+                        val recurringTask = when (spinner_backup_frequency.selectedItem) {
+                            "Daily" -> {
+
+                                Log.e("Daily!5Min>>", "Yes<<")
+
+                                PeriodicWorkRequest.Builder(
+                                    BackupWorker::class.java,
+                                    15,
+                                    TimeUnit.MINUTES
+                                )
+                                    .addTag(WORKER_TAG)
+                                    .setConstraints(constraints)
+                                    .setBackoffCriteria(
+                                        BackoffPolicy.LINEAR,
+                                        PeriodicWorkRequest.MIN_BACKOFF_MILLIS,
+                                        TimeUnit.MILLISECONDS
+                                    )
+                                    .build()
+
+                            }
+                            "Weekly" -> PeriodicWorkRequest.Builder(
+                                BackupWorker::class.java,
+                                7,
+                                TimeUnit.DAYS
+                            )
+                                .addTag(WORKER_TAG)
+                                .setConstraints(constraints)
+                                .setBackoffCriteria(
+                                    BackoffPolicy.LINEAR,
+                                    PeriodicWorkRequest.MIN_BACKOFF_MILLIS,
+                                    TimeUnit.MILLISECONDS
+                                )
+                                .build()
+                            else -> PeriodicWorkRequest.Builder(
+                                BackupWorker::class.java,
+                                30,
+                                TimeUnit.DAYS
+                            )
+                                .addTag(WORKER_TAG)
+                                .setConstraints(constraints)
+                                .setBackoffCriteria(
+                                    BackoffPolicy.LINEAR,
+                                    PeriodicWorkRequest.MIN_BACKOFF_MILLIS,
+                                    TimeUnit.MILLISECONDS
+                                )
+                                .build()
+
+
+                        }
+                        workManager = WorkManager.getInstance(this@MainActivity)
+                        workManager.enqueue(recurringTask)
 
 
                     }
                 } else
                     Toast.makeText(this, "Enter valid Name & Password!!", Toast.LENGTH_LONG).show()
-            }*/
+
+
             }
 
             R.id.tv_sign_in -> requestSignIn()
@@ -279,15 +285,21 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     Drive.Builder(AndroidHttp.newCompatibleTransport(), GsonFactory(), credentials)
                         .setApplicationName("DB BackUp").build()
 
-                driveServiceHelper = DriveServiceHelper(this, drive)
+                driveServiceHelper = DriveServiceHelper(this, drive, this)
 
-                driveServiceHelper.getBakedUpData()
-
+                driveServiceHelper.getBackedUpData()
 
             }
             .addOnFailureListener {
                 Toast.makeText(this, "Sign-in Failed!!", Toast.LENGTH_LONG).show()
             }
+
+    }
+
+    override fun onFileDownloaded() {
+
+        getDataFromDb()
+
 
     }
 }

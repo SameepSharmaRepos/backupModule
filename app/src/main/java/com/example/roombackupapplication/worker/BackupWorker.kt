@@ -34,7 +34,7 @@ class BackupWorker(private val context: Context, workerParameters: WorkerParamet
 
         val driveNew = silentSignInThenSync()
 
-        driveServiceHelper= DriveServiceHelper(context, driveNew!!)
+        driveServiceHelper= DriveServiceHelper(context, driveNew!!, null)
         val dbFile = context.getDatabasePath(MyDb.dbName)
 
         driveServiceHelper.createFile(dbFile.path)
