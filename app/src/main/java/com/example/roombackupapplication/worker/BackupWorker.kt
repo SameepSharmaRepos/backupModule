@@ -4,7 +4,6 @@ import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.work.CoroutineWorker
-import androidx.work.Worker
 import androidx.work.WorkerParameters
 import com.example.roombackupapplication.DriveServiceHelper
 import com.example.roombackupapplication.MyDb
@@ -21,6 +20,7 @@ import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveScopes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.util.*
 import java.util.concurrent.ExecutionException
 
@@ -35,14 +35,16 @@ class BackupWorker(private val context: Context, workerParameters: WorkerParamet
         val driveNew = silentSignInThenSync()
 
         driveServiceHelper= DriveServiceHelper(context, driveNew!!, null)
-        val dbFile = context.getDatabasePath(MyDb.dbName)
 
-        driveServiceHelper.createFile(dbFile.path)
+        Log.e("DataBasePath>>","${context.getDatabasePath(MyDb.dbName)?.path}, ${context.getDatabasePath(MyDb.dbName)?.parent} <<")
+
+        driveServiceHelper.uploadBackupFileToDrive()
             .addOnSuccessListener {
                 Toast.makeText(context, "Uploaded successfully!!", Toast.LENGTH_LONG).show()
             }.addOnFailureListener{
 
                 Toast.makeText(context, "Upload Failed!!", Toast.LENGTH_LONG).show()
+                Log.e("Failure>>", "${it.message} <<<")
             }
 
 

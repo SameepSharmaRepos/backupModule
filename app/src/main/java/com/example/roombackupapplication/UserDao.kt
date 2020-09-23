@@ -9,7 +9,7 @@ import androidx.room.Query
 interface UserDao {
 
     @Query("SELECT * FROM User")
-    suspend fun getUser():User
+    suspend fun getUser():List<User>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUser(user: User)

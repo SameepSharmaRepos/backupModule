@@ -35,6 +35,12 @@ abstract class MyDb : RoomDatabase() {
                 return instance
             }
         }
+
+        fun closeDataBase(){
+            INSTANCE?.close()
+            INSTANCE=null
+        }
+
     }
 
     //Callback
